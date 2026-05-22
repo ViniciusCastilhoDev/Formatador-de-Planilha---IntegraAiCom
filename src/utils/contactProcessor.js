@@ -6,8 +6,19 @@ function encontrarIndicePorHeader(linha, headerAlvo) {
   return linha.findIndex((cel) => String(cel ?? "").trim() === headerAlvo);
 }
 
-function montarNumero(rawNumero, rawDDD) {
-  const numero = String(rawNumero ?? "").replace(/\D/g, "");
+function resolverNumeroComFallback(linha, mapeamento) {
+  const principal = String(linha[mapeamento.colunaNumero] ?? "").replace(/\D/g, "");
+  if (principal) return { numero: principal, colunaUsada: mapeamento.colunaNumeroHeader };
+
+  for (const alt of mapeamento.alternativas) {
+    const val = String(linha[alt.indice] ?? "").replace(/\D/g, "");
+    if (val) return { numero: val, colunaUsada: alt.header };
+  }
+
+  return { numero: "", colunaUsada: mapeamento.colunaNumeroHeader };
+}
+
+function aplicarDDD(numero, rawDDD) {
   if (!numero) return "";
   if (rawDDD != null) {
     const ddd = String(rawDDD).replace(/\D/g, "");
@@ -16,7 +27,7 @@ function montarNumero(rawNumero, rawDDD) {
   return numero;
 }
 
-export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNumeroHeader, separarPorSecoes, colunaDDDHeader) {
+export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNumeroHeader, separarPorSecoes, colunaDDDHeader, colunasAlternativas = []) {
   const validos = [];
   const invalidos = [];
   let linhasLidas = 0;
@@ -41,7 +52,16 @@ export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNum
       const idxDDD = encontrarIndicePorHeader(linha, colunaDDDHeader);
 
       if (idxNome >= 0 && idxNumero >= 0) {
-        mapeamento = { colunaNome: idxNome, colunaNumero: idxNumero, colunaDDD: idxDDD };
+        const alternativas = colunasAlternativas
+          .map((h) => ({ header: h, indice: encontrarIndicePorHeader(linha, h) }))
+          .filter((a) => a.indice >= 0);
+        mapeamento = {
+          colunaNome: idxNome,
+          colunaNumero: idxNumero,
+          colunaNumeroHeader,
+          colunaDDD: idxDDD,
+          alternativas,
+        };
         encontrouCabecalho = true;
         grupos.add(grupoBase);
         secoes += 1;
@@ -52,10 +72,10 @@ export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNum
     if (!mapeamento) continue;
 
     const nomeOriginal = linha[mapeamento.colunaNome];
-    const numeroOriginal = linha[mapeamento.colunaNumero];
     const rawDDD = mapeamento.colunaDDD >= 0 ? linha[mapeamento.colunaDDD] : null;
+    const { numero } = resolverNumeroComFallback(linha, mapeamento);
     const name = limparNomeContato(nomeOriginal);
-    const number = montarNumero(numeroOriginal, rawDDD);
+    const number = aplicarDDD(numero, rawDDD);
 
     linhasLidas++;
 

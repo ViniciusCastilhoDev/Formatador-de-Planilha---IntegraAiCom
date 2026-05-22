@@ -965,6 +965,9 @@ input, button, select, textarea { font-family: inherit; }
 .preview-original { font-family: monospace; font-size: 11px; color: var(--texto-suave) !important; }
 .preview-ddd { font-family: monospace; font-weight: 700 !important; color: var(--ciano-dark) !important; }
 .preview-final { font-family: monospace; font-weight: 800 !important; color: var(--texto) !important; }
+.preview-coluna-usada { font-size: 11px; color: var(--texto-muted); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-coluna-fallback { color: #e07b00 !important; font-weight: 600 !important; }
+.preview-fallback-info { margin-top: 8px; font-size: 11px; color: var(--texto-muted); padding: 0 2px; }
 .preview-vazio { color: #ccc; font-style: italic; }
 
 /* CONFIG POR SEÇÃO */

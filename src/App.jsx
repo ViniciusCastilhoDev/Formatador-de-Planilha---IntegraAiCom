@@ -96,6 +96,7 @@ export default function App() {
   }, [quantidade]);
 
   const podeSecoes = Boolean(analise && analise.temSecoes);
+  const colunasAlternativas = (analise?.todasColunasNumero || []).filter((h) => h !== colunaNumero);
 
   async function processar() {
     const newErrors = validarCampos({ arquivo, quantidade, analise, colunaNome, colunaNumero });
@@ -130,6 +131,7 @@ export default function App() {
         onStatus: setStatusMsg,
         adicionarDDD,
         colunaDDD,
+        todasColunasNumero: analise?.todasColunasNumero || [],
       });
 
       setResultado(resultadoProcessamento);
@@ -273,6 +275,7 @@ export default function App() {
               colunaNumero={colunaNumero}
               adicionarDDD={adicionarDDD}
               colunaDDD={colunaDDD}
+              colunasAlternativas={colunasAlternativas}
             />
             <Summary
               arquivo={arquivo}

@@ -1,19 +1,31 @@
-function calcularNumeroFinal(rawNumero, rawDDD) {
-  const numero = String(rawNumero ?? "").replace(/\D/g, "");
+function resolverNumeroFallback(row, colunaNumero, colunasAlternativas) {
+  const principal = String(row[colunaNumero] ?? "").replace(/\D/g, "");
+  if (principal) return { numero: principal, colunaUsada: colunaNumero, usouFallback: false };
+
+  for (const col of (colunasAlternativas || [])) {
+    const val = String(row[col] ?? "").replace(/\D/g, "");
+    if (val) return { numero: val, colunaUsada: col, usouFallback: true };
+  }
+
+  return { numero: "", colunaUsada: colunaNumero, usouFallback: false };
+}
+
+function aplicarDDDPrevia(numero, rawDDD) {
   if (!numero) return { dddUsado: "—", numeroFinal: "(vazio)" };
   if (rawDDD != null) {
     const ddd = String(rawDDD).replace(/\D/g, "");
     if (numero.length < 10 && ddd) return { dddUsado: ddd, numeroFinal: ddd + numero };
-    if (numero.length >= 10) return { dddUsado: "—", numeroFinal: numero };
+    return { dddUsado: "—", numeroFinal: numero };
   }
   return { dddUsado: "—", numeroFinal: numero };
 }
 
-export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, adicionarDDD, colunaDDD }) {
+export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, adicionarDDD, colunaDDD, colunasAlternativas }) {
   if (!linhasAmostra?.length || !colunaNome || !colunaNumero) return null;
 
   const linhas = linhasAmostra.slice(0, 5);
   const mostraDDD = adicionarDDD && colunaDDD;
+  const temAlternativas = colunasAlternativas && colunasAlternativas.length > 0;
 
   return (
     <div className="preview-panel">
@@ -35,20 +47,27 @@ export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, 
           <thead>
             <tr>
               <th>Nome</th>
-              <th>Número original</th>
+              <th>Nº original</th>
+              {temAlternativas && <th>Coluna usada</th>}
               {mostraDDD && <th>DDD</th>}
               <th>Número final</th>
             </tr>
           </thead>
           <tbody>
             {linhas.map((row, i) => {
-              const rawNumero = row[colunaNumero] ?? "";
+              const rawOriginal = row[colunaNumero] ?? "";
+              const { numero, colunaUsada, usouFallback } = resolverNumeroFallback(row, colunaNumero, colunasAlternativas);
               const rawDDD = mostraDDD ? (row[colunaDDD] ?? null) : null;
-              const { dddUsado, numeroFinal } = calcularNumeroFinal(rawNumero, rawDDD);
+              const { dddUsado, numeroFinal } = aplicarDDDPrevia(numero, rawDDD);
               return (
                 <tr key={i}>
                   <td className="preview-nome">{row[colunaNome] || <span className="preview-vazio">(vazio)</span>}</td>
-                  <td className="preview-original">{rawNumero || <span className="preview-vazio">(vazio)</span>}</td>
+                  <td className="preview-original">{rawOriginal || <span className="preview-vazio">(vazio)</span>}</td>
+                  {temAlternativas && (
+                    <td className={`preview-coluna-usada${usouFallback ? " preview-coluna-fallback" : ""}`}>
+                      {colunaUsada}
+                    </td>
+                  )}
                   {mostraDDD && <td className="preview-ddd">{dddUsado}</td>}
                   <td className="preview-final">{numeroFinal}</td>
                 </tr>
@@ -57,6 +76,12 @@ export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, 
           </tbody>
         </table>
       </div>
+
+      {temAlternativas && (
+        <div className="preview-fallback-info">
+          Fallback ativo · ordem: {colunasAlternativas.join(" → ")}
+        </div>
+      )}
     </div>
   );
 }

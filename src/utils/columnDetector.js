@@ -139,3 +139,65 @@ export function coletarCabecalhosDaAba(dados) {
   const linha = dados[indiceCabecalho] || [];
   return linha.map((cel) => String(cel ?? "").trim()).filter(Boolean);
 }
+
+// ── Detecção de colunas de número para fallback ──────────────────────────────
+
+const FORTES_TELEFONE = ["whatsapp", "whats", "zap", "celular", "telefone", "telef", "fone"];
+const AMBIGUOS_TELEFONE = ["numero", "number", "contato"];
+const BLACKLIST_FALLBACK = [
+  "cpf", "cnpj", "codigo", "cod", "documento", "doc", "venda", "valor",
+  "data", "bairro", "cidade", "vendedor", "cep", "uf", "estado", "email",
+  "nota", "protocolo", "pedido", "nf", "nº", "n°",
+];
+
+function prioridadeColunaTelefone(norm) {
+  if (norm.includes("whatsapp") || norm.includes("whats") || norm.includes("zap")) return 1;
+  if (norm.includes("celular")) return 2;
+  if (norm.includes("telefone") || norm.includes("telef") || norm.includes("fone")) return 3;
+  return 4;
+}
+
+function valorPareceTelefone(valor) {
+  const d = String(valor ?? "").replace(/\D/g, "");
+  return d.length >= 8 && d.length <= 13;
+}
+
+function headerNaBlacklist(norm) {
+  return BLACKLIST_FALLBACK.some((b) => norm.includes(b));
+}
+
+/**
+ * Retorna todos os cabeçalhos que parecem colunas de telefone, ordenados por prioridade.
+ * linhasData: array de objetos {header: valor} das linhas de dados (para validação de colunas ambíguas).
+ */
+export function detectarColunasNumero(cabecalhos, linhasData) {
+  const candidatas = [];
+
+  for (const header of cabecalhos) {
+    const norm = normalizarTexto(header);
+    if (!norm) continue;
+    if (headerNaBlacklist(norm)) continue;
+
+    let aceita = false;
+    let pri = 99;
+
+    if (FORTES_TELEFONE.some((f) => norm.includes(f))) {
+      aceita = true;
+      pri = prioridadeColunaTelefone(norm);
+    } else if (AMBIGUOS_TELEFONE.some((a) => norm === a)) {
+      const valores = linhasData
+        .map((row) => row[header])
+        .filter((v) => v != null && String(v).trim() !== "");
+      if (valores.length > 0 && valores.filter(valorPareceTelefone).length / valores.length >= 0.6) {
+        aceita = true;
+        pri = 4;
+      }
+    }
+
+    if (aceita) candidatas.push({ header, pri });
+  }
+
+  return candidatas
+    .sort((a, b) => a.pri - b.pri || cabecalhos.indexOf(a.header) - cabecalhos.indexOf(b.header))
+    .map((c) => c.header);
+}

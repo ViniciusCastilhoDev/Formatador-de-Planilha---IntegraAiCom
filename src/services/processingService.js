@@ -1,6 +1,6 @@
 import { extrairContatosDaAba, removerDuplicados } from "../utils/contactProcessor.js";
 import { agruparContatosPorGrupo, detectarPlanilhaComSecoes, obterRegraDivisao } from "../utils/sectionProcessor.js";
-import { coletarCabecalhosDaAba, detectarMapeamentoCabecalho, encontrarLinhaCabecalho } from "../utils/columnDetector.js";
+import { coletarCabecalhosDaAba, detectarColunasNumero, detectarMapeamentoCabecalho, encontrarLinhaCabecalho } from "../utils/columnDetector.js";
 import { limparNomeArquivo } from "../utils/fileNameUtils.js";
 import { lerWorkbook, worksheetToRows } from "./excelService.js";
 import { adicionarRelatorios } from "./reportService.js";
@@ -44,8 +44,8 @@ export async function analisarPlanilha(arquivo) {
         if (mapeamento) {
           primeiroMapeamento = mapeamento;
           const headerRow = dados[idx];
-          let count = 0;
-          for (let r = idx + 1; r < dados.length && count < 5; r++) {
+          const linhasDeteccao = [];
+          for (let r = idx + 1; r < dados.length && linhasDeteccao.length < 100; r++) {
             const row = dados[r] || [];
             if (row.every((c) => c == null || c === "")) continue;
             const rowObj = {};
@@ -53,9 +53,10 @@ export async function analisarPlanilha(arquivo) {
               const key = String(cel ?? "").trim();
               if (key) rowObj[key] = row[colIdx] != null ? String(row[colIdx]) : "";
             });
-            linhasAmostra.push(rowObj);
-            count++;
+            linhasDeteccao.push(rowObj);
+            if (linhasDeteccao.length <= 5) linhasAmostra.push(rowObj);
           }
+          primeiroMapeamento._linhasDeteccao = linhasDeteccao;
         }
       }
     }
@@ -66,6 +67,9 @@ export async function analisarPlanilha(arquivo) {
     return NOMES_COLUNA_DDD.some((n) => norm === n);
   }) || null;
 
+  const linhasDeteccao = primeiroMapeamento?._linhasDeteccao || linhasAmostra;
+  const todasColunasNumero = detectarColunasNumero(todosHeaders, linhasDeteccao);
+
   return {
     ...analise,
     cabecalhos: todosHeaders,
@@ -73,6 +77,7 @@ export async function analisarPlanilha(arquivo) {
     colunaNumeroDetectada: primeiroMapeamento?.numeroHeader || null,
     colunaDDDDetectada,
     linhasAmostra,
+    todasColunasNumero,
   };
 }
 
@@ -89,6 +94,7 @@ export async function processarPlanilha({
   onStatus,
   adicionarDDD,
   colunaDDD,
+  todasColunasNumero,
 }) {
   const workbook = await lerWorkbook(arquivo);
   const analise = detectarPlanilhaComSecoes(workbook);
@@ -100,10 +106,12 @@ export async function processarPlanilha({
   let totalLinhas = 0;
   let totalSecoes = 0;
 
+  const colunasAlternativas = (todasColunasNumero || []).filter((h) => h !== colunaNumero);
+
   workbook.SheetNames.forEach((nomeAba) => {
     const worksheet = workbook.Sheets[nomeAba];
     const dados = worksheetToRows(worksheet);
-    const resultado = extrairContatosDaAba(dados, nomeAba, colunaNome, colunaNumero, separarPorSecoes, adicionarDDD ? colunaDDD : null);
+    const resultado = extrairContatosDaAba(dados, nomeAba, colunaNome, colunaNumero, separarPorSecoes, adicionarDDD ? colunaDDD : null, colunasAlternativas);
 
     validos = validos.concat(resultado.contatosValidos);
     invalidos = invalidos.concat(resultado.contatosInvalidos);
