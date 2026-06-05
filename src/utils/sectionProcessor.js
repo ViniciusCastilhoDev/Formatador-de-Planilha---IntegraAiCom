@@ -19,7 +19,10 @@ export function agruparContatosPorGrupo(contatos) {
   return contatos.reduce((acc, contato) => {
     const grupo = contato.grupo || "Geral";
     if (!acc[grupo]) acc[grupo] = [];
-    acc[grupo].push({ name: contato.name, number: contato.number });
+    const item = { name: contato.name, number: contato.number };
+    if (contato.empresa != null) item.empresa = contato.empresa;
+    if (contato.cnpj != null) item.cnpj = contato.cnpj;
+    acc[grupo].push(item);
     return acc;
   }, {});
 }

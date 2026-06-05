@@ -5,9 +5,9 @@ export function criarZip() {
   return new JSZip();
 }
 
-export function adicionarArquivoTabela(zip, nome, dados, formato, incluirMotivo = false) {
+export function adicionarArquivoTabela(zip, nome, dados, formato, incluirMotivo = false, camposExtras = []) {
   const extensao = formato === "xlsx" ? "xlsx" : "csv";
-  zip.file(`${nome}.${extensao}`, tabelaParaArquivo(dados, formato, incluirMotivo));
+  zip.file(`${nome}.${extensao}`, tabelaParaArquivo(dados, formato, incluirMotivo, camposExtras));
 }
 
 export async function gerarZipBlob(zip) {

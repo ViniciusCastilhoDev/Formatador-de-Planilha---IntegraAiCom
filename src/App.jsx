@@ -32,6 +32,8 @@ export default function App() {
   const [colunaDDD, setColunaDDD] = useState("");
   const [duplicarNumerosAdicionais, setDuplicarNumerosAdicionais] = useState(false);
   const [colunasNumerosAdicionais, setColunasNumerosAdicionais] = useState([]);
+  const [colunaEmpresa, setColunaEmpresa] = useState("");
+  const [colunaCnpj, setColunaCnpj] = useState("");
   const [arquivoInvalido, setArquivoInvalido] = useState(null);
 
   useEffect(() => {
@@ -53,6 +55,8 @@ export default function App() {
       setColunaDDD("");
       setDuplicarNumerosAdicionais(false);
       setColunasNumerosAdicionais([]);
+      setColunaEmpresa("");
+      setColunaCnpj("");
       return undefined;
     }
 
@@ -76,6 +80,8 @@ export default function App() {
         setColunaNome(novaAnalise.colunaNomeDetectada || "");
         setColunaNumero(novaAnalise.colunaNumeroDetectada || "");
         setColunaDDD(novaAnalise.colunaDDDDetectada || "");
+        setColunaEmpresa(novaAnalise.colunaEmpresaDetectada || "");
+        setColunaCnpj(novaAnalise.colunaCnpjDetectada || "");
 
         const configInicial = {};
         (novaAnalise.grupos || []).forEach((grupo) => {
@@ -144,6 +150,8 @@ export default function App() {
         colunaDDD,
         todasColunasNumero: analise?.todasColunasNumero || [],
         colunasNumerosAdicionais: duplicarNumerosAdicionais ? colunasNumerosAdicionais : [],
+        colunaEmpresa: colunaEmpresa || null,
+        colunaCnpj: colunaCnpj || null,
       });
 
       setResultado(resultadoProcessamento);
@@ -254,6 +262,10 @@ export default function App() {
               colunaDDD={colunaDDD}
               duplicarNumerosAdicionais={duplicarNumerosAdicionais}
               colunasNumerosAdicionais={colunasNumerosAdicionais}
+              colunaEmpresa={colunaEmpresa}
+              colunaCnpj={colunaCnpj}
+              onColunaEmpresaChange={setColunaEmpresa}
+              onColunaCnpjChange={setColunaCnpj}
               onQuantidadeChange={(value) => {
                 setQuantidade(value);
                 setErrors((prev) => ({ ...prev, quantidade: undefined }));
@@ -297,6 +309,8 @@ export default function App() {
               adicionarDDD={adicionarDDD}
               colunaDDD={colunaDDD}
               colunasAlternativas={colunasAlternativas}
+              colunaEmpresa={colunaEmpresa}
+              colunaCnpj={colunaCnpj}
             />
             <Summary
               arquivo={arquivo}

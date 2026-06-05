@@ -9,16 +9,18 @@ export function worksheetToRows(worksheet) {
   return XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "", raw: false });
 }
 
-export function tabelaParaArquivo(dados, formato, incluirMotivo = false) {
+export function tabelaParaArquivo(dados, formato, incluirMotivo = false, camposExtras = []) {
   if (formato === "xlsx") {
-    const header = incluirMotivo ? ["name", "number", "dddOriginal", "motivo", "aba", "secao", "linha"] : ["name", "number"];
+    const header = incluirMotivo
+      ? ["name", "number", ...camposExtras, "dddOriginal", "motivo", "aba", "secao", "linha"]
+      : ["name", "number", ...camposExtras];
     const worksheet = XLSX.utils.json_to_sheet(dados, { header });
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Contatos");
     return XLSX.write(workbook, { bookType: "xlsx", type: "array" });
   }
 
-  return converterParaCSV(dados, incluirMotivo);
+  return converterParaCSV(dados, incluirMotivo, camposExtras);
 }
 
 export function criarRelatorioXlsx(linhas) {
@@ -28,20 +30,22 @@ export function criarRelatorioXlsx(linhas) {
   return XLSX.write(workbook, { bookType: "xlsx", type: "array" });
 }
 
-function converterParaCSV(dados, incluirMotivo = false) {
-  const cabecalho = incluirMotivo ? "name;number;dddOriginal;motivo;aba;secao;linha" : "name;number";
-  const linhas = dados.map((item) => {
-    const name = escaparCsv(item.name);
-    const number = escaparCsv(item.number);
+function converterParaCSV(dados, incluirMotivo = false, camposExtras = []) {
+  const colsBase = ["name", "number", ...camposExtras];
+  const cabecalho = incluirMotivo
+    ? `${colsBase.join(";")};dddOriginal;motivo;aba;secao;linha`
+    : colsBase.join(";");
 
-    if (!incluirMotivo) return `"${name}";"${number}"`;
+  const linhas = dados.map((item) => {
+    const base = colsBase.map((col) => `"${escaparCsv(item[col])}"`).join(";");
+    if (!incluirMotivo) return base;
 
     const dddOriginal = escaparCsv(item.dddOriginal);
     const motivo = escaparCsv(item.motivo);
     const aba = escaparCsv(item.aba);
     const secao = escaparCsv(item.secao ?? item.grupo);
     const linha = escaparCsv(item.linha);
-    return `"${name}";"${number}";"${dddOriginal}";"${motivo}";"${aba}";"${secao}";"${linha}"`;
+    return `${base};"${dddOriginal}";"${motivo}";"${aba}";"${secao}";"${linha}"`;
   });
 
   return `${cabecalho}\n${linhas.join("\n")}`;

@@ -15,6 +15,8 @@ export default function GeneralConfig({
   colunaDDD,
   duplicarNumerosAdicionais,
   colunasNumerosAdicionais,
+  colunaEmpresa,
+  colunaCnpj,
   onQuantidadeChange,
   onFormatoChange,
   onColunaNomeChange,
@@ -24,6 +26,8 @@ export default function GeneralConfig({
   onColunaDDDChange,
   onDuplicarNumerosAdicionaisChange,
   onColunasNumerosAdicionaisChange,
+  onColunaEmpresaChange,
+  onColunaCnpjChange,
 }) {
   const cabecalhos = analise?.cabecalhos || [];
   const mostrarSelects = arquivo && !analisando && cabecalhos.length > 0;
@@ -194,6 +198,60 @@ export default function GeneralConfig({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Dados cadastrais ── */}
+      {mostrarSelects && (
+        <div className="form-section">
+          <p className="form-section-title">
+            Dados cadastrais
+            <span className="section-tag-new">Novo</span>
+          </p>
+          <p className="cadastral-hint">
+            Colunas adicionais exportadas junto ao nome e número. Deixe em branco para não incluir.
+          </p>
+          <div className="row">
+            <div className="input">
+              <label>
+                Nome da empresa
+                {analise?.colunaEmpresaDetectada && (
+                  <span className="detect-tag">
+                    <svg viewBox="0 0 10 8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="9" height="7">
+                      <polyline points="1 4 3.5 7 9 1" />
+                    </svg>
+                    detectado
+                  </span>
+                )}
+              </label>
+              <div className="custom-select">
+                <select value={colunaEmpresa} onChange={(e) => onColunaEmpresaChange(e.target.value)}>
+                  <option value="">— Não incluir —</option>
+                  {cabecalhos.map((h) => <option key={h} value={h}>{h}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="input">
+              <label>
+                CNPJ
+                {analise?.colunaCnpjDetectada && (
+                  <span className="detect-tag">
+                    <svg viewBox="0 0 10 8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="9" height="7">
+                      <polyline points="1 4 3.5 7 9 1" />
+                    </svg>
+                    detectado
+                  </span>
+                )}
+              </label>
+              <div className="custom-select">
+                <select value={colunaCnpj} onChange={(e) => onColunaCnpjChange(e.target.value)}>
+                  <option value="">— Não incluir —</option>
+                  {cabecalhos.map((h) => <option key={h} value={h}>{h}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       )}

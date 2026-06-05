@@ -166,6 +166,34 @@ function headerNaBlacklist(norm) {
   return BLACKLIST_FALLBACK.some((b) => norm.includes(b));
 }
 
+const PALAVRAS_EMPRESA_EXATAS = [
+  "empresa", "nome da empresa", "nome empresa", "razao social", "nome fantasia", "fantasia",
+  "corporacao", "corporação", "razao", "empresa cliente",
+];
+
+export function detectarColunaEmpresa(cabecalhos) {
+  for (const h of cabecalhos) {
+    const norm = normalizarTexto(h);
+    if (PALAVRAS_EMPRESA_EXATAS.some((p) => norm === normalizarTexto(p))) return h;
+  }
+  for (const h of cabecalhos) {
+    const norm = normalizarTexto(h);
+    if (norm.includes("empresa") || norm.startsWith("razao") || norm.includes("fantasia")) return h;
+  }
+  return null;
+}
+
+const PALAVRAS_CNPJ_EXATAS = ["cnpj", "cpf/cnpj", "cnpj/cpf", "cpf e cnpj", "cnpj cpf"];
+
+export function detectarColunaCnpj(cabecalhos) {
+  for (const h of cabecalhos) {
+    const norm = normalizarTexto(h);
+    if (PALAVRAS_CNPJ_EXATAS.some((p) => norm === normalizarTexto(p))) return h;
+    if (norm === "cnpj" || norm.startsWith("cnpj")) return h;
+  }
+  return null;
+}
+
 /**
  * Retorna todos os cabeçalhos que parecem colunas de telefone, ordenados por prioridade.
  * linhasData: array de objetos {header: valor} das linhas de dados (para validação de colunas ambíguas).

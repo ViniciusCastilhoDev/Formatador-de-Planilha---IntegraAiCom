@@ -27,7 +27,7 @@ function aplicarDDD(numero, rawDDD) {
   return numero;
 }
 
-export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNumeroHeader, separarPorSecoes, colunaDDDHeader, colunasAlternativas = [], colunasParaDuplicar = []) {
+export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNumeroHeader, separarPorSecoes, colunaDDDHeader, colunasAlternativas = [], colunasParaDuplicar = [], colunaEmpresaHeader = null, colunaCnpjHeader = null) {
   const validos = [];
   const invalidos = [];
   let linhasLidas = 0;
@@ -58,6 +58,8 @@ export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNum
         const duplicar = colunasParaDuplicar
           .map((h) => ({ header: h, indice: encontrarIndicePorHeader(linha, h) }))
           .filter((a) => a.indice >= 0);
+        const idxEmpresa = encontrarIndicePorHeader(linha, colunaEmpresaHeader);
+        const idxCnpj = encontrarIndicePorHeader(linha, colunaCnpjHeader);
         mapeamento = {
           colunaNome: idxNome,
           colunaNumero: idxNumero,
@@ -65,6 +67,8 @@ export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNum
           colunaDDD: idxDDD,
           alternativas,
           duplicar,
+          colunaEmpresa: idxEmpresa,
+          colunaCnpj: idxCnpj,
         };
         encontrouCabecalho = true;
         grupos.add(grupoBase);
@@ -107,7 +111,9 @@ export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNum
       continue;
     }
 
-    validos.push({ name, number, grupo: grupoBase, aba: nomeAba, linha: indice + 1 });
+    const empresa = mapeamento.colunaEmpresa >= 0 ? String(linha[mapeamento.colunaEmpresa] ?? "").trim() : undefined;
+    const cnpj = mapeamento.colunaCnpj >= 0 ? String(linha[mapeamento.colunaCnpj] ?? "").trim() : undefined;
+    validos.push({ name, number, grupo: grupoBase, aba: nomeAba, linha: indice + 1, empresa, cnpj });
     grupos.add(grupoBase);
 
     if (mapeamento.duplicar.length > 0) {
@@ -183,11 +189,14 @@ export function removerDuplicados(contatos, separarPorSecoes) {
     }
 
     encontrados.set(chave, true);
-    unicos.push({
+    const unico = {
       name: contato.name,
       number: contato.number,
       grupo: separarPorSecoes ? contato.grupo || "Geral" : "Geral",
-    });
+    };
+    if (contato.empresa != null) unico.empresa = contato.empresa;
+    if (contato.cnpj != null) unico.cnpj = contato.cnpj;
+    unicos.push(unico);
   });
 
   return { unicos, duplicados };

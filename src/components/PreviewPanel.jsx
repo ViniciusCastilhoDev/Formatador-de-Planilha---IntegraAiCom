@@ -20,12 +20,14 @@ function aplicarDDDPrevia(numero, rawDDD) {
   return { dddUsado: "—", numeroFinal: numero };
 }
 
-export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, adicionarDDD, colunaDDD, colunasAlternativas }) {
+export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, adicionarDDD, colunaDDD, colunasAlternativas, colunaEmpresa, colunaCnpj }) {
   if (!linhasAmostra?.length || !colunaNome || !colunaNumero) return null;
 
   const linhas = linhasAmostra.slice(0, 5);
   const mostraDDD = adicionarDDD && colunaDDD;
   const temAlternativas = colunasAlternativas && colunasAlternativas.length > 0;
+  const mostraEmpresa = Boolean(colunaEmpresa);
+  const mostraCnpj = Boolean(colunaCnpj);
 
   return (
     <div className="preview-panel">
@@ -51,6 +53,8 @@ export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, 
               {temAlternativas && <th>Coluna usada</th>}
               {mostraDDD && <th>DDD</th>}
               <th>Número final</th>
+              {mostraEmpresa && <th>Empresa</th>}
+              {mostraCnpj && <th>CNPJ</th>}
             </tr>
           </thead>
           <tbody>
@@ -70,6 +74,12 @@ export default function PreviewPanel({ linhasAmostra, colunaNome, colunaNumero, 
                   )}
                   {mostraDDD && <td className="preview-ddd">{dddUsado}</td>}
                   <td className="preview-final">{numeroFinal}</td>
+                  {mostraEmpresa && (
+                    <td className="preview-extra">{row[colunaEmpresa] || <span className="preview-vazio">(vazio)</span>}</td>
+                  )}
+                  {mostraCnpj && (
+                    <td className="preview-extra">{row[colunaCnpj] || <span className="preview-vazio">(vazio)</span>}</td>
+                  )}
                 </tr>
               );
             })}

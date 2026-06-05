@@ -1773,6 +1773,57 @@ input, button, select, textarea { font-family: inherit; }
   .wf-connector { width: 28px; }
 }
 
+/* ── DADOS CADASTRAIS ──────────────────────────────────────── */
+.section-tag-new {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ciano-dark);
+  background: var(--ciano-light);
+  border: 1px solid rgba(0, 200, 200, 0.30);
+  padding: 2px 7px;
+  border-radius: 50px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.detect-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.10);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  padding: 2px 7px;
+  border-radius: 50px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.detect-tag svg { flex-shrink: 0; }
+
+.cadastral-hint {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.preview-extra {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.75rem;
+  color: var(--texto-medio);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── MODAL DE FORMATO INVÁLIDO ──────────────────────────────── */
 .modal-backdrop {
   position: fixed;

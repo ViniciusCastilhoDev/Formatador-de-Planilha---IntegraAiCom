@@ -1,6 +1,6 @@
 import { extrairContatosDaAba, removerDuplicados } from "../utils/contactProcessor.js";
 import { agruparContatosPorGrupo, detectarPlanilhaComSecoes, obterRegraDivisao } from "../utils/sectionProcessor.js";
-import { coletarCabecalhosDaAba, detectarColunasNumero, detectarMapeamentoCabecalho, encontrarLinhaCabecalho } from "../utils/columnDetector.js";
+import { coletarCabecalhosDaAba, detectarColunaEmpresa, detectarColunaCnpj, detectarColunasNumero, detectarMapeamentoCabecalho, encontrarLinhaCabecalho } from "../utils/columnDetector.js";
 import { limparNomeArquivo } from "../utils/fileNameUtils.js";
 import { lerWorkbook, worksheetToRows } from "./excelService.js";
 import { adicionarRelatorios } from "./reportService.js";
@@ -69,6 +69,8 @@ export async function analisarPlanilha(arquivo) {
 
   const linhasDeteccao = primeiroMapeamento?._linhasDeteccao || linhasAmostra;
   const todasColunasNumero = detectarColunasNumero(todosHeaders, linhasDeteccao);
+  const colunaEmpresaDetectada = detectarColunaEmpresa(todosHeaders);
+  const colunaCnpjDetectada = detectarColunaCnpj(todosHeaders);
 
   return {
     ...analise,
@@ -78,6 +80,8 @@ export async function analisarPlanilha(arquivo) {
     colunaDDDDetectada,
     linhasAmostra,
     todasColunasNumero,
+    colunaEmpresaDetectada,
+    colunaCnpjDetectada,
   };
 }
 
@@ -96,6 +100,8 @@ export async function processarPlanilha({
   colunaDDD,
   todasColunasNumero,
   colunasNumerosAdicionais = [],
+  colunaEmpresa = null,
+  colunaCnpj = null,
 }) {
   const workbook = await lerWorkbook(arquivo);
   const analise = detectarPlanilhaComSecoes(workbook);
@@ -112,7 +118,7 @@ export async function processarPlanilha({
   workbook.SheetNames.forEach((nomeAba) => {
     const worksheet = workbook.Sheets[nomeAba];
     const dados = worksheetToRows(worksheet);
-    const resultado = extrairContatosDaAba(dados, nomeAba, colunaNome, colunaNumero, separarPorSecoes, adicionarDDD ? colunaDDD : null, colunasAlternativas, colunasNumerosAdicionais);
+    const resultado = extrairContatosDaAba(dados, nomeAba, colunaNome, colunaNumero, separarPorSecoes, adicionarDDD ? colunaDDD : null, colunasAlternativas, colunasNumerosAdicionais, colunaEmpresa || null, colunaCnpj || null);
 
     validos = validos.concat(resultado.contatosValidos);
     invalidos = invalidos.concat(resultado.contatosInvalidos);
@@ -121,9 +127,18 @@ export async function processarPlanilha({
   });
 
   const { unicos, duplicados } = removerDuplicados(validos, separarPorSecoes);
+  const camposExtras = [];
+  if (colunaEmpresa) camposExtras.push("empresa");
+  if (colunaCnpj) camposExtras.push("cnpj");
+
   const grupos = separarPorSecoes
     ? agruparContatosPorGrupo(unicos)
-    : { Geral: unicos.map((contato) => ({ name: contato.name, number: contato.number })) };
+    : { Geral: unicos.map((contato) => {
+        const item = { name: contato.name, number: contato.number };
+        if (colunaEmpresa && contato.empresa != null) item.empresa = contato.empresa;
+        if (colunaCnpj && contato.cnpj != null) item.cnpj = contato.cnpj;
+        return item;
+      }) };
   const nomesPastas = Object.keys(grupos).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
   if (unicos.length === 0) {
@@ -156,7 +171,7 @@ export async function processarPlanilha({
 
     for (let indice = 0; indice < totalPartes; indice++) {
       const parte = contatosDoGrupo.slice(indice * quantidadePorArquivo, (indice + 1) * quantidadePorArquivo);
-      adicionarArquivoTabela(zip, `${pasta}${prefixo}_${indice + 1}`, parte, formato, false);
+      adicionarArquivoTabela(zip, `${pasta}${prefixo}_${indice + 1}`, parte, formato, false, camposExtras);
       feitos++;
       if (onProgress) onProgress((feitos / totalArquivos) * 100);
       await new Promise((resolve) => setTimeout(resolve, 12));
