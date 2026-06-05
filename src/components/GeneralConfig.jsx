@@ -13,6 +13,8 @@ export default function GeneralConfig({
   errors,
   adicionarDDD,
   colunaDDD,
+  duplicarNumerosAdicionais,
+  colunasNumerosAdicionais,
   onQuantidadeChange,
   onFormatoChange,
   onColunaNomeChange,
@@ -20,9 +22,12 @@ export default function GeneralConfig({
   onModoDivisaoChange,
   onAdicionarDDDChange,
   onColunaDDDChange,
+  onDuplicarNumerosAdicionaisChange,
+  onColunasNumerosAdicionaisChange,
 }) {
   const cabecalhos = analise?.cabecalhos || [];
   const mostrarSelects = arquivo && !analisando && cabecalhos.length > 0;
+  const colunasNumerosDisponiveis = (analise?.todasColunasNumero || []).filter((h) => h !== colunaNumero);
 
   return (
     <>
@@ -126,6 +131,66 @@ export default function GeneralConfig({
                       <option key={h} value={h}>{h}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Números alternativos ── */}
+      {mostrarSelects && colunasNumerosDisponiveis.length > 0 && (
+        <div className="form-section">
+          <p className="form-section-title">Números alternativos</p>
+          <div className="ddd-config">
+            <label className="numalt-toggle-label">
+              <input
+                type="checkbox"
+                className="numalt-toggle-input"
+                checked={duplicarNumerosAdicionais}
+                onChange={(e) => {
+                  onDuplicarNumerosAdicionaisChange(e.target.checked);
+                  if (!e.target.checked) onColunasNumerosAdicionaisChange([]);
+                }}
+              />
+              <span className="numalt-toggle-track">
+                <span className="numalt-toggle-thumb" />
+              </span>
+              <span className="numalt-toggle-text">Duplicar contatos com números alternativos</span>
+              <Tooltip text="Cada contato será duplicado para cada coluna adicional selecionada. O nome receberá o sufixo com o nome da coluna. Ex: José Felipe (Telefone)." />
+            </label>
+
+            {duplicarNumerosAdicionais && (
+              <div className="numalt-colunas">
+                <p className="numalt-hint">Selecione as colunas que serão usadas como número adicional:</p>
+                <div className="numalt-grid">
+                  {colunasNumerosDisponiveis.map((col) => {
+                    const ativo = colunasNumerosAdicionais.includes(col);
+                    return (
+                      <label key={col} className={`numalt-option${ativo ? " is-on" : ""}`}>
+                        <input
+                          type="checkbox"
+                          className="numalt-option-input"
+                          checked={ativo}
+                          onChange={() => {
+                            onColunasNumerosAdicionaisChange(
+                              ativo
+                                ? colunasNumerosAdicionais.filter((c) => c !== col)
+                                : [...colunasNumerosAdicionais, col]
+                            );
+                          }}
+                        />
+                        {ativo ? (
+                          <svg viewBox="0 0 10 8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="10" height="8" className="numalt-check">
+                            <polyline points="1 4 3.5 7 9 1" />
+                          </svg>
+                        ) : (
+                          <span className="numalt-dot" />
+                        )}
+                        <span>{col}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -31,7 +31,7 @@ export default function Summary({ arquivo, analisando, analise, resultado, titul
 
       {arquivo && analise && !resultado && <AbasDetectadas analise={analise} />}
       {resultado && <Metricas resultado={resultado} />}
-      {!arquivo && <div className="mockup-empty">Envie uma planilha para ver as abas detectadas e o resultado da preparação.</div>}
+      {!arquivo && <div className="mockup-empty">Envie uma planilha para ver a prévia e o resultado da preparação aqui.</div>}
     </div>
   );
 }

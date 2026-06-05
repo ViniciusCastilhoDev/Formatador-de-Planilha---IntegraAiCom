@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import Download from "./components/Download.jsx";
-import Flow from "./components/Flow.jsx";
 import GeneralConfig from "./components/GeneralConfig.jsx";
 import PreviewPanel from "./components/PreviewPanel.jsx";
 import SectionConfig from "./components/SectionConfig.jsx";
 import Summary from "./components/Summary.jsx";
 import Upload from "./components/Upload.jsx";
+import WorkflowBar from "./components/WorkflowBar.jsx";
 import { processarPlanilha, analisarPlanilha } from "./services/processingService.js";
 import { limparNomeArquivo } from "./utils/fileNameUtils.js";
 
 export default function App() {
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const [arquivo, setArquivo] = useState(null);
   const [analisando, setAnalisando] = useState(false);
   const [analise, setAnalise] = useState(null);
@@ -29,6 +30,14 @@ export default function App() {
   const [errors, setErrors] = useState({});
   const [adicionarDDD, setAdicionarDDD] = useState(false);
   const [colunaDDD, setColunaDDD] = useState("");
+  const [duplicarNumerosAdicionais, setDuplicarNumerosAdicionais] = useState(false);
+  const [colunasNumerosAdicionais, setColunasNumerosAdicionais] = useState([]);
+  const [arquivoInvalido, setArquivoInvalido] = useState(null);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
+    localStorage.setItem("theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   useEffect(() => {
     if (!arquivo) {
@@ -42,6 +51,8 @@ export default function App() {
       setErrors({});
       setAdicionarDDD(false);
       setColunaDDD("");
+      setDuplicarNumerosAdicionais(false);
+      setColunasNumerosAdicionais([]);
       return undefined;
     }
 
@@ -132,6 +143,7 @@ export default function App() {
         adicionarDDD,
         colunaDDD,
         todasColunasNumero: analise?.todasColunasNumero || [],
+        colunasNumerosAdicionais: duplicarNumerosAdicionais ? colunasNumerosAdicionais : [],
       });
 
       setResultado(resultadoProcessamento);
@@ -152,12 +164,22 @@ export default function App() {
   }
 
   function selecionarArquivo(file) {
+    const nome = file.name.toLowerCase();
+    const valido = [".xlsx", ".xls", ".csv"].some((ext) => nome.endsWith(ext));
+    if (!valido) {
+      setArquivoInvalido(file.name);
+      return;
+    }
     setArquivo(file);
     setErrors((prev) => ({ ...prev, arquivo: undefined }));
   }
 
   return (
     <>
+      {arquivoInvalido && (
+        <ModalFormatoInvalido nome={arquivoInvalido} onClose={() => setArquivoInvalido(null)} />
+      )}
+
       <div className="bg-decor">
         <div className="bg-grid" />
         <div className="bg-blob-a" />
@@ -176,30 +198,25 @@ export default function App() {
             </div>
           </div>
 
-          <div className="topbar-meta">
-            <span className="topbar-meta-tag">Online</span>
-            Processamento <strong>100% no navegador</strong>
+          <div className="topbar-actions">
+            <button
+              className="theme-toggle"
+              onClick={() => setDarkMode((d) => !d)}
+              aria-label={darkMode ? "Mudar para modo claro" : "Mudar para modo escuro"}
+            >
+              {darkMode ? <SunIcon /> : <MoonIcon />}
+            </button>
           </div>
         </div>
       </header>
 
       <main className="main">
-        <section className="hero">
-          <span className="hero-badge">
-            <span className="hero-badge-dot" />
-            Organizador de Planilhas
-          </span>
-          <h1 className="hero-title">
-            Organizador de Planilhas para Disparos<br />
-            <span className="hl">IntegraAiCom</span>
-          </h1>
-          <p className="hero-sub">
-            Mande sua planilha que será organizada de acordo com os padrões do IntegraAiCom.
-            Selecione as colunas de <strong>nome</strong> e <strong>número</strong> e separa em arquivos prontos pro disparo.
-          </p>
-
-          <Flow arquivo={arquivo} processando={processando} resultado={resultado} />
-        </section>
+        <WorkflowBar
+          arquivo={arquivo}
+          analisando={analisando}
+          processando={processando}
+          resultado={resultado}
+        />
 
         <section className="grid">
           <div className="form-card">
@@ -235,6 +252,8 @@ export default function App() {
               errors={errors}
               adicionarDDD={adicionarDDD}
               colunaDDD={colunaDDD}
+              duplicarNumerosAdicionais={duplicarNumerosAdicionais}
+              colunasNumerosAdicionais={colunasNumerosAdicionais}
               onQuantidadeChange={(value) => {
                 setQuantidade(value);
                 setErrors((prev) => ({ ...prev, quantidade: undefined }));
@@ -251,6 +270,8 @@ export default function App() {
               onModoDivisaoChange={setModoDivisao}
               onAdicionarDDDChange={setAdicionarDDD}
               onColunaDDDChange={setColunaDDD}
+              onDuplicarNumerosAdicionaisChange={setDuplicarNumerosAdicionais}
+              onColunasNumerosAdicionaisChange={setColunasNumerosAdicionais}
             />
 
             <SectionConfig
@@ -301,6 +322,64 @@ export default function App() {
         </div>
       </footer>
     </>
+  );
+}
+
+function ModalFormatoInvalido({ nome, onClose }) {
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose} role="presentation">
+      <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </div>
+        <div className="modal-content">
+          <strong className="modal-title" id="modal-title">Formato não suportado</strong>
+          <p className="modal-body">
+            O arquivo <span className="modal-filename">{nome}</span> não é compatível com o preparador.
+          </p>
+          <p className="modal-formatos">
+            Formatos aceitos: <strong>.xlsx</strong>, <strong>.xls</strong> e <strong>.csv</strong>
+          </p>
+        </div>
+        <button className="btn btn-primary modal-btn" onClick={onClose} autoFocus>
+          Entendi
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
   );
 }
 

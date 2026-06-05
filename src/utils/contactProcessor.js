@@ -27,7 +27,7 @@ function aplicarDDD(numero, rawDDD) {
   return numero;
 }
 
-export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNumeroHeader, separarPorSecoes, colunaDDDHeader, colunasAlternativas = []) {
+export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNumeroHeader, separarPorSecoes, colunaDDDHeader, colunasAlternativas = [], colunasParaDuplicar = []) {
   const validos = [];
   const invalidos = [];
   let linhasLidas = 0;
@@ -55,12 +55,16 @@ export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNum
         const alternativas = colunasAlternativas
           .map((h) => ({ header: h, indice: encontrarIndicePorHeader(linha, h) }))
           .filter((a) => a.indice >= 0);
+        const duplicar = colunasParaDuplicar
+          .map((h) => ({ header: h, indice: encontrarIndicePorHeader(linha, h) }))
+          .filter((a) => a.indice >= 0);
         mapeamento = {
           colunaNome: idxNome,
           colunaNumero: idxNumero,
           colunaNumeroHeader,
           colunaDDD: idxDDD,
           alternativas,
+          duplicar,
         };
         encontrouCabecalho = true;
         grupos.add(grupoBase);
@@ -105,6 +109,15 @@ export function extrairContatosDaAba(dados, nomeAba, colunaNomeHeader, colunaNum
 
     validos.push({ name, number, grupo: grupoBase, aba: nomeAba, linha: indice + 1 });
     grupos.add(grupoBase);
+
+    if (mapeamento.duplicar.length > 0) {
+      for (const col of mapeamento.duplicar) {
+        const numAlt = aplicarDDD(String(linha[col.indice] ?? "").replace(/\D/g, ""), rawDDD);
+        if (numAlt) {
+          validos.push({ name: `${name} (${col.header})`, number: numAlt, grupo: grupoBase, aba: nomeAba, linha: indice + 1 });
+        }
+      }
+    }
   }
 
   // Fallback: se não detectou cabeçalho mas a primeira linha parece ter nome/número

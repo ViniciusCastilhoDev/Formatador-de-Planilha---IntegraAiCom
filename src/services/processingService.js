@@ -95,6 +95,7 @@ export async function processarPlanilha({
   adicionarDDD,
   colunaDDD,
   todasColunasNumero,
+  colunasNumerosAdicionais = [],
 }) {
   const workbook = await lerWorkbook(arquivo);
   const analise = detectarPlanilhaComSecoes(workbook);
@@ -111,7 +112,7 @@ export async function processarPlanilha({
   workbook.SheetNames.forEach((nomeAba) => {
     const worksheet = workbook.Sheets[nomeAba];
     const dados = worksheetToRows(worksheet);
-    const resultado = extrairContatosDaAba(dados, nomeAba, colunaNome, colunaNumero, separarPorSecoes, adicionarDDD ? colunaDDD : null, colunasAlternativas);
+    const resultado = extrairContatosDaAba(dados, nomeAba, colunaNome, colunaNumero, separarPorSecoes, adicionarDDD ? colunaDDD : null, colunasAlternativas, colunasNumerosAdicionais);
 
     validos = validos.concat(resultado.contatosValidos);
     invalidos = invalidos.concat(resultado.contatosInvalidos);
